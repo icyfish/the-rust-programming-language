@@ -13,6 +13,8 @@
 		- [所有权和函数](#%E6%89%80%E6%9C%89%E6%9D%83%E5%92%8C%E5%87%BD%E6%95%B0)
 		- [返回值和作用域](#%E8%BF%94%E5%9B%9E%E5%80%BC%E5%92%8C%E4%BD%9C%E7%94%A8%E5%9F%9F)
 	- [引用与借用](#%E5%BC%95%E7%94%A8%E4%B8%8E%E5%80%9F%E7%94%A8)
+		- [可变的引用](#%E5%8F%AF%E5%8F%98%E7%9A%84%E5%BC%95%E7%94%A8)
+		- [悬垂引用](#%E6%82%AC%E5%9E%82%E5%BC%95%E7%94%A8)
 
 <!-- /TOC -->
 ## 4. 理解所有权
@@ -421,3 +423,175 @@ fn calculate_length(s: &String) -> usize { // s 是 String 的引用
 
 变量 `s` 的有效作用域与函数参数的作用域一致, 唯一的区别是利用引用的 `s`, 即使停止引用, 也不会被丢弃, 因为 `s` 不存在所有权. 当函数使用引用而不是实际值作为参数时, 我们不再需要返回对应值来交还控制权, 因为始终不曾拥有控制权.
 
+我们将创建引用的行为称为 **借用**(_borrowing_). 在现实生活中, 如果某人拥有某样东西, 我们可以向这个人借用这个东西, 当我们用完之后, 就要将其归还. 你并不拥有它.
+
+那么当我们试图改变我们所借用的东西的时候, 会发生什么呢? 尝试4-6的代码, 剧透: 这段代码不会生效!
+
+```rust
+fn main() {
+    let s = String::from("hello");
+
+    change(&s);
+}
+
+fn change(some_string: &String) {
+    some_string.push_str(", world");
+}
+
+```
+
+当我们执行以上代码的时候, 会遇到这个报错:
+
+```shell
+$ cargo run
+   Compiling ownership v0.1.0 (file:///projects/ownership)
+error[E0596]: cannot borrow `*some_string` as mutable, as it is behind a `&` reference
+ --> src/main.rs:8:5
+  |
+7 | fn change(some_string: &String) {
+  |                        ------- help: consider changing this to be a mutable reference: `&mut String`
+8 |     some_string.push_str(", world");
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `some_string` is a `&` reference, so the data it refers to cannot be borrowed as mutable
+
+For more information about this error, try `rustc --explain E0596`.
+error: could not compile `ownership` due to previous error
+```
+
+正如变量在默认情况下是不可变的, 引用也是. Rust 不允许我们修改所引用的值.
+
+#### 可变的引用
+
+现在我们开始修改4-6的代码, 对所借用的变量进行一些简单地修改, 将引用变成**可变引用**(_mutable reference_):
+
+```rust
+fn main() {
+    let mut s = String::from("hello");
+
+    change(&mut s);
+}
+
+fn change(some_string: &mut String) {
+    some_string.push_str(", world");
+}
+```
+
+首先, 我们给 `s` 添加 `mut` 标识. 然后在调用 `change` 函数的时候通过 `&mut s` 创建一个可变引用, 并且更新函数签名, 以接受一个可变引用`some_string: &mut String`. 显而易见的是, `change` 函数会改变所借用的值.
+
+但可变引用有一个比较大的缺陷: 对于某一部分特定的数据, 一次只能存在一个可变引用. 下面的代码试图为 `s` 创建两个可变引用, 会抛出错误:
+
+```rust
+fn main() {
+    let mut s = String::from("hello");
+
+    let r1 = &mut s;
+    let r2 = &mut s;
+
+    println!("{}, {}", r1, r2);
+}
+```
+
+错误内容是这样的:
+
+
+```shell
+$ cargo run
+   Compiling ownership v0.1.0 (file:///projects/ownership)
+error[E0499]: cannot borrow `s` as mutable more than once at a time
+ --> src/main.rs:5:14
+  |
+4 |     let r1 = &mut s;
+  |              ------ first mutable borrow occurs here
+5 |     let r2 = &mut s;
+  |              ^^^^^^ second mutable borrow occurs here
+6 | 
+7 |     println!("{}, {}", r1, r2);
+  |                        -- first borrow later used here
+
+For more information about this error, try `rustc --explain E0499`.
+error: could not compile `ownership` due to previous error
+```
+
+报错显示这段代码是无效的, 因为我们不能进行重复的可变借用. 第一次可变借用发生在 `r1`, 它的生命周期必须持续到在 `println!` 中, 但在可变引用的创建与使用过程中间, 我们在 `r2` 中又创建了一个可变引用, 与 `r1` 借用的是同样的数据.
+
+The restriction preventing multiple mutable references to the same data at the same time allows for mutation but in a very controlled fashion. 刚接触 Rust 的朋友可能会很不习惯这一点, 因为在大部分其他语言中, 变量都是可变的. 这个限制的好处是 Rust 能够在编译阶段避免数据竞争. **数据竞争** (_data race_) 和竞态条件很相似, 当以下三个行为出现时, 就会产生数据竞争:
+
+- 2个及以上的指针同时去读取同样的数据.
+- 至少1个指针被用于写入数据.
+- 没有同步数据访问的机制
+
+数据竞争很可能导致未被定义的行为, 难以在运行时追踪, 而且很难被发现和修复; Rust 会通过拒绝编译含有数据竞争的代码来避免这个问题!
+
+一如往常, 我们可以使用大括号来创建一个新的作用域, 以允许多个可变引用, 只是不能 **同时** 拥有:
+
+```rust
+fn main() {
+    let mut s = String::from("hello");
+
+    {
+        let r1 = &mut s;
+    } // r1 在这里离开作用域, 因此我们可以在此之后创建新的引用
+
+    let r2 = &mut s;
+}
+```
+
+Rust 在组合可变和不可变引用的时候, 也采用了类似的规则. 下面的代码会导致错误:
+
+```rust
+fn main() {
+    let mut s = String::from("hello");
+
+    let r1 = &s; // 没有问题
+    let r2 = &s; // 没有问题
+    let r3 = &mut s; // 问题很大!
+
+    println!("{}, {}, and {}", r1, r2, r3);
+}
+```
+
+具体错误信息如下:
+
+```shell
+$ cargo run
+   Compiling ownership v0.1.0 (file:///projects/ownership)
+error[E0502]: cannot borrow `s` as mutable because it is also borrowed as immutable
+ --> src/main.rs:6:14
+  |
+4 |     let r1 = &s; // no problem
+  |              -- immutable borrow occurs here
+5 |     let r2 = &s; // no problem
+6 |     let r3 = &mut s; // BIG PROBLEM
+  |              ^^^^^^ mutable borrow occurs here
+7 | 
+8 |     println!("{}, {}, and {}", r1, r2, r3);
+  |                                -- immutable borrow later used here
+
+For more information about this error, try `rustc --explain E0502`.
+error: could not compile `ownership` due to previous error
+```
+
+我们同样不能在拥有不可变引用的同时拥有可变引用. 不可变引用的用户并不希望看到值突然变化. 不过, 多个不可变引用还是被允许的, 因为单纯的读取数据, 不可能会影响到其它人进行数据的读取.
+
+注意, 一个引用的作用域从声明时开始, 持续到最后一次使用为止. 比如, 一下代码就能够被成果编译, 因为最后一次`println!`中对不可变数据的引用发生在可变引用之前:
+
+```rust
+fn main() {
+    let mut s = String::from("hello");
+
+    let r1 = &s; // 没有问题
+    let r2 = &s; // 没有问题
+    println!("{} and {}", r1, r2);
+    // 变量 r1 和 r2 从这里开始就不会再被使用
+
+    let r3 = &mut s; // 没有问题
+    println!("{}", r3);
+}
+```
+
+不可变引用的作用域在 `println!` 之后就终止了, 终止的过程在可变引用 `r3` 被创建之前. 这些作用域不存在重叠的部分, 因此代码是被允许的. 编译器在作用域结束之前判断不再使用的引用的能力被称为 **非词法作用域生命周期** (_Non-Lexical Lifetimes_, 简称 NLL). 可以在[版本指引](https://blog.rust-lang.org/2018/12/06/Rust-1.31-and-rust-2018.html#non-lexical-lifetimes)中了解更多信息.
+
+尽管借用的抛错有时候会让人很困扰, 但是其实这是 Rust 编译器提前指出潜在bug(在编译阶段而非运行时), 抛出问题. 有这样的机制, 我们就无需再费力去追踪为什么我们的数据与预期的不一致了.
+
+#### 悬垂引用
+
+在存在指针概念的语言中, 我们可能会很容易地创建**悬垂指针** (_dangling pointer_): 
