@@ -15,6 +15,8 @@
 	- [引用与借用](#%E5%BC%95%E7%94%A8%E4%B8%8E%E5%80%9F%E7%94%A8)
 		- [可变的引用](#%E5%8F%AF%E5%8F%98%E7%9A%84%E5%BC%95%E7%94%A8)
 		- [悬垂引用](#%E6%82%AC%E5%9E%82%E5%BC%95%E7%94%A8)
+		- [引用的规则](#%E5%BC%95%E7%94%A8%E7%9A%84%E8%A7%84%E5%88%99)
+	- [Slice 类型](#slice-%E7%B1%BB%E5%9E%8B)
 
 <!-- /TOC -->
 ## 4. 理解所有权
@@ -594,4 +596,118 @@ fn main() {
 
 #### 悬垂引用
 
-在存在指针概念的语言中, 我们可能会很容易地创建**悬垂指针** (_dangling pointer_): 
+在存在指针概念的语言中, 我们可能会很容易地创建**悬垂指针** (_dangling pointer_): 其指向的内存可能已经分配给其它持有者. 相比之下, 在 Rust 中, 编译器会确保引用不会成为悬垂状态: 如果代码中存在对某部分数据的引用, 编译器会确保这部分数据不会在其引用之前离开作用域.
+
+现在我们尝试创建一个悬垂引用来了解 Rust 是如何在编译阶段就避免这个错误的:
+
+```rust
+fn main() {
+    let reference_to_nothing = dangle();
+}
+
+fn dangle() -> &String {
+    let s = String::from("hello");
+
+    &s
+}
+```
+
+具体的错误信息如下:
+
+```shell
+$ cargo run
+   Compiling ownership v0.1.0 (file:///projects/ownership)
+error[E0106]: missing lifetime specifier
+ --> src/main.rs:5:16
+  |
+5 | fn dangle() -> &String {
+  |                ^ expected named lifetime parameter
+  |
+  = help: this function's return type contains a borrowed value, but there is no value for it to be borrowed from
+help: consider using the `'static` lifetime
+  |
+5 | fn dangle() -> &'static String {
+  |                ~~~~~~~~
+
+For more information about this error, try `rustc --explain E0106`.
+error: could not compile `ownership` due to previous error
+```
+
+以上错误信息还涉及到了我们暂时还没提及到的概念: 生命周期. 在第十章中我们会对这个概念进行详细的说明. 不过即使我们暂时不理会生命周期的概念, 通过以下的信息也能发现代码中的问题:
+
+```shell
+this function's return type contains a borrowed value, but there is no value
+for it to be borrowed from
+```
+
+现在我们开始看看, 悬垂(`dangle`)代码的每一个阶段, 都发生了什么:
+
+```rust
+fn main() {
+    let reference_to_nothing = dangle();
+}
+
+fn dangle() -> &String { // dangle 函数返回 String 的引用
+
+    let s = String::from("hello"); // s 是一个新的 String
+
+    &s // 我们返回 String 的引用 s
+} // s 在此跳出作用域, 同时被丢弃, 所占用的内存也被释放
+// 危险!
+
+```
+
+因为 `s` 在 `dangle` 内部被创建, 当 `dangle` 中的代码执行结束时, `s` 所占用的内存就会被释放. 不过我们在代码中返回了 `s` 的引用. 这意味着引用指向了一个不合法的 `String`, Rust 不会允许我们这样做.
+
+此时的解决方案是直接返回 `String`:
+
+```rust
+fn main() {
+    let string = no_dangle();
+}
+
+fn no_dangle() -> String {
+    let s = String::from("hello");
+
+    s
+}
+```
+
+#### 引用的规则
+
+现在我们回顾一下之前讨论过的关于引用的概念:
+
+- 在任何时候, 代码中要么存在一个可变引用, 要么存在多个不可变引用.
+- 引用必须始终是合法的.
+
+接下来我们开始查看另一种类型的引用: slices.
+
+### Slice 类型
+
+_Slices_ 使得我们能够引用集合中的一连串相邻元素, 而不需要引用整个集合. slice 是引用的其中一种类型, 因此它没有所有权.
+
+现在有一个简单的编程题: 实现一个函数, 接受一个字符串作为函数参数, 函数最终返回字符串的首个单词. 如果函数没有从字符串中找到空格, 那么整个字符串就是一个单词, 就会返回整个字符串.
+
+如果没有 Slice 类型的话, 函数将会是这样实现的:
+
+```rust
+fn first_word(s: &String) -> ?
+```
+
+`first_word` 函数接收 `&String` 作为参数. 我们不需要所有权, 因此这样是没有问题的. 但是我们的返回值应该是什么呢? Rust 中没有获取部分字符串的方法. 不过我们可以返回单词结尾的索引, 通过空格可以知道单词的结尾在哪里. 现在尝试以下代码:
+
+```rust
+fn first_word(s: &String) -> usize {
+    let bytes = s.as_bytes();
+
+    for (i, &item) in bytes.iter().enumerate() {
+        if item == b' ' {
+            return i;
+        }
+    }
+
+    s.len()
+}
+
+fn main() {}
+```
