@@ -17,6 +17,7 @@
 		- [悬垂引用](#%E6%82%AC%E5%9E%82%E5%BC%95%E7%94%A8)
 		- [引用的规则](#%E5%BC%95%E7%94%A8%E7%9A%84%E8%A7%84%E5%88%99)
 	- [Slice 类型](#slice-%E7%B1%BB%E5%9E%8B)
+		- [字符串 slice](#%E5%AD%97%E7%AC%A6%E4%B8%B2-slice)
 
 <!-- /TOC -->
 ## 4. 理解所有权
@@ -149,7 +150,7 @@ fn main() {
 
 `s` 所占用的内存被释放的位置十分自然: 当 `s` 离开作用域的时候. 当一个变量离开作用域, Rust 就会为我们调用一个特别的函数. 这个函数是 [`drop`](https://doc.rust-lang.org/std/ops/trait.Drop.html#tymethod.drop), 在这里, 我们可以释放 `String` 所指变量所占用的内存. 在函数体最后, Rust 自动调用 `drop` 方法.
 
-**注意:** 在 C++ 中, 在某个项目的生命周期结束释放内存的模式被称作是: **资源获取即为初始化**(_RAII_). 如果你了解过这个模式, 那么对 Rust 中的 `drop` 函数也不会太陌生.
+> 注意: 在 C++ 中, 在某个项目的生命周期结束释放内存的模式被称作是: **资源获取即为初始化**(_RAII_). 如果你了解过这个模式, 那么对 Rust 中的 `drop` 函数也不会太陌生.
 
 这个模式对 Rust 代码如何编写有比较深的影响. 现在看可能会觉得很简单, 但是在复杂场景下, 比如在堆中分配多个变量, 我们就很难预估代码的行为. 现在我们开始探索复杂场景:
 
@@ -387,7 +388,7 @@ fn calculate_length(s: &String) -> usize {
 
 ![4-5](../imgs/trpl04-05.svg)
 
-**注意:** 与使用 `&` 引用相反的操作是 **解引用** (_dereferencing_), 通过符号 `*` 实现. 我们会在第八章中看到一些解引用的示例, 在第15章中探讨解引用的细节.
+> 注意: 与使用 `&` 引用相反的操作是 **解引用** (_dereferencing_), 通过符号 `*` 实现. 我们会在第八章中看到一些解引用的示例, 在第15章中探讨解引用的细节.
 
 现在我们来查看下面这个函数调用:
 
@@ -574,7 +575,7 @@ error: could not compile `ownership` due to previous error
 
 我们同样不能在拥有不可变引用的同时拥有可变引用. 不可变引用的用户并不希望看到值突然变化. 不过, 多个不可变引用还是被允许的, 因为单纯的读取数据, 不可能会影响到其它人进行数据的读取.
 
-注意, 一个引用的作用域从声明时开始, 持续到最后一次使用为止. 比如, 一下代码就能够被成果编译, 因为最后一次`println!`中对不可变数据的引用发生在可变引用之前:
+> 注意: 一个引用的作用域从声明时开始, 持续到最后一次使用为止. 比如, 一下代码就能够被成果编译, 因为最后一次`println!`中对不可变数据的引用发生在可变引用之前:
 
 ```rust
 fn main() {
@@ -711,3 +712,147 @@ fn first_word(s: &String) -> usize {
 
 fn main() {}
 ```
+
+因为我们需要遍历 `String` 中的每一个元素来确认某个值是否是空格, 我们用 `as_byte` 方法将 `String` 转换成字节数组:
+
+```rust
+fn first_word(s: &String) -> usize {
+    let bytes = s.as_bytes();
+
+    for (i, &item) in bytes.iter().enumerate() {
+        if item == b' ' {
+            return i;
+        }
+    }
+
+    s.len()
+}
+
+fn main() {}
+```
+
+接下来我们用 `iter` 方法在字节数组上创建一个迭代器:
+
+```rust
+fn first_word(s: &String) -> usize {
+    let bytes = s.as_bytes();
+
+    for (i, &item) in bytes.iter().enumerate() {
+        if item == b' ' {
+            return i;
+        }
+    }
+
+    s.len()
+}
+
+fn main() {}
+```
+
+我们会在第 13 章讨论更多关于迭代器的细节. 现在只需要知道 `iter` 返回集合中的每一个元素, 而 `enumerate` 包装了 `iter` 的结果, 将这些元素作为元组的一部分来返回. `enumerate` 返回的元组中, 第一个元素是索引, 第二个是集合中元素的引用. 这比我们自己计算索引要更方便一些.
+
+因为 `enumerate` 方法返回一个元组, 我们可以使用模式来解构这个元组. 在第六章中我们会详细介绍模式的概念. 在 `for` 循环中, 我们声明了一个模式: `i` 是元组中的索引, `&item` 则是元组中的单个字节. 因为从 `.iter().enumerate()` 中获取到的是引用, 因此我们需要在模式中使用 `&` .
+
+在 `for` 循环中, 我们通过字节字面量语法来搜寻代表空格的部分. 如果找到了空格, 就会返回它所在的位置, 否则返回字符串的长度: `s.len()`:
+
+现在我们知道了如何找到字符串中的第一个单词末尾索引的方法, 但是还存在一个问题. 我们只返回了一个 `usize` 类型的值, 但是这个值只有在 `&String` 存在的语境下才有意义. 也就是说, 因为它与 `String` 相互独立, 没有办法确保它在未来依然是合法的. 考虑代码 4-8 中的程序, 这里使用了 4-7 中的 `first_word` 函数:
+
+```rust
+fn first_word(s: &String) -> usize {
+    let bytes = s.as_bytes();
+
+    for (i, &item) in bytes.iter().enumerate() {
+        if item == b' ' {
+            return i;
+        }
+    }
+
+    s.len()
+}
+
+fn main() {
+    let mut s = String::from("hello world");
+
+    let word = first_word(&s); // word 最重的值是 5
+
+    s.clear(); // 这段代码会将 String 清空, 使其值变成 ""
+
+    // word still has the value 5 here, but there's no more string that
+    // we could meaningfully use the value 5 with. word is now totally invalid!
+}
+```
+
+以上程序编译时不会出现任何错误, 并且在调用 `s.clear()` 之后使用 `word` 也不会出错. 因为 `word` 和 `s` 的状态并没有任何联系, `word` 仍然包含值 `5`. 我们可以使用 `5` 和变量 `s` 来尝试提取出第一个单词, 但这其实是有问题的, 因为当我们在 `word` 中存储 `5` 之后 `s` 的内容就发生变化了.
+
+这样的话, 我们就需要时时刻刻担心 `word` 的索引和 `s` 中所存储的数据不实时同步, 十分繁琐且很容易出问题. 如果我们的函数是 `second_word`, 管理索引的问题就更严重. 函数签名的内容就将会是这样:
+
+```rust
+fn second_word(s: &String) -> (usize, usize) {
+```
+
+现在我们要追踪起始和末尾的索引, 同时需要计算特定状态下更多与状态无关联的值的数据, 现在已经有三个不相关的变量在漂浮中, 但需要保持同步.
+
+还好 Rust 提供了一个方法来解决这个问题: 字符串 slice.
+
+#### 字符串 slice
+
+**字符串 slice**(_string slice_) 是 `String` 中一部分值的引用, 类似如下这样:
+
+```rust
+fn main() {
+    let s = String::from("hello world");
+
+    let hello = &s[0..5];
+    let world = &s[6..11];
+}
+```
+
+`hello` 不是整个 `String` 的引用而是 `String` 中一部分内容的引用, 由 `[0..5]` 指定. 我们使用大括号的语法来划定一个范围 `[starting_index..ending_index]`, `starting_index` 是 slice 第一个位置的值, `ending_index` 则是 slice 最后一个位置的后一个值. 内部, slice 的数据结构存储了 slice 的起始位置和长度, 长度值为 `ending_index` 减去 `starting_index`. 因此在 `let world = &s[6..11];` 的情况下, `world` 是一个包含指向`s`索引 6 的指针的 slice, 它的长度值为 5.
+
+用图表来呈现就是下面这样:
+
+![4-6](../imgs/trpl04-06.svg)
+
+我们用到了 Rust 的 `..` range 语法, 如果你想要从索引 0 开始, 可以省略 `..` 之前的值. 具体的代码将会是这样:
+
+```rust
+#![allow(unused)]
+fn main() {
+let s = String::from("hello");
+
+let slice = &s[0..2];
+let slice = &s[..2];
+}
+```
+
+同样地, 如果你的 slice 包含 `String` 的最后一个字节, 也可以把 `..` 之后的值省略. 看下面的代码, 最后两行的结果是一致的:
+
+```rust
+#![allow(unused)]
+fn main() {
+    let s = String::from("hello");
+
+    let len = s.len();
+
+    let slice = &s[3..len];
+    let slice = &s[3..];
+}
+````
+
+如果 `..` 前后都省略了, 那么 slice 就是整个字符串. 因此下面的结果一致:
+
+```rust
+
+#![allow(unused)]
+fn main() {
+let s = String::from("hello");
+
+let len = s.len();
+
+let slice = &s[0..len];
+let slice = &s[..];
+}
+
+```
+
+> 注意: 字符串 slice range 的索引必须位于有效的 UTF-8 字符边界内. 如果你试图在多字节字符之间创建字符串 slice, 程序就会异常退出. 
