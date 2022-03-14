@@ -789,9 +789,9 @@ fn main() {
 fn second_word(s: &String) -> (usize, usize) {
 ```
 
-现在我们要追踪起始和末尾的索引, 同时需要计算特定状态下更多与状态无关联的值的数据, 现在已经有三个不相关的变量在漂浮中, 但需要保持同步.
+现在我们要追踪起始和末尾的索引, 同时需要计算特定状态下更多与状态无关联的值的数据, 现在已经有三个不相关的变量飘忽不定, 但需要保持同步.
 
-还好 Rust 提供了一个方法来解决这个问题: 字符串 slice.
+还好 Rust 提供了一种方式来解决这个问题: 字符串 slice.
 
 #### 字符串 slice
 
@@ -806,7 +806,7 @@ fn main() {
 }
 ```
 
-`hello` 不是整个 `String` 的引用而是 `String` 中一部分内容的引用, 由 `[0..5]` 指定. 我们使用大括号的语法来划定一个范围 `[starting_index..ending_index]`, `starting_index` 是 slice 第一个位置的值, `ending_index` 则是 slice 最后一个位置的后一个值. 内部, slice 的数据结构存储了 slice 的起始位置和长度, 长度值为 `ending_index` 减去 `starting_index`. 因此在 `let world = &s[6..11];` 的情况下, `world` 是一个包含指向 `s` 索引 6 的指针的 slice, 它的长度值为 5.
+`hello` 不是整个 `String` 的引用而是 `String` 中一部分内容的引用, 由 `[0..5]` 指定. 我们使用中括号的语法来划定一个范围 `[starting_index..ending_index]`, `starting_index` 是 slice 第一个位置的值, `ending_index` 则是 slice 最后一个位置的后一个值. 内部, slice 的数据结构存储了 slice 的起始位置和长度, 长度值为 `ending_index` 减去 `starting_index`. 因此在 `let world = &s[6..11];` 的情况下, `world` 是一个包含指向 `s` 索引 6 的指针的 slice, 它的长度值为 5.
 
 用图表来呈现就是下面这样:
 
@@ -824,7 +824,7 @@ let slice = &s[..2];
 }
 ```
 
-同样地, 如果你的 slice 包含 `String` 的最后一个字节, 也可以把 `..` 之后的值省略. 看下面的代码, 最后两行的结果是一致的:
+同样地, 如果你的 slice 包含 `String` 的最后一个字节, 也可以把 `..` 之后的值省略. 看下面的代码, 最后两行代码的结果是一致的:
 
 ```rust
 #![allow(unused)]
@@ -854,11 +854,10 @@ let slice = &s[..];
 
 ```
 
-REVIEW_MARK
 
 > 注意: 字符串 slice range 的索引必须位于有效的 UTF-8 字符边界内. 如果你试图在多字节字符之间创建字符串 slice, 程序就会异常退出. 在本章我们为了更好地介绍字符串 slice 的概念, 只使用 ASCII 字符集. 在第 8 章: [使用字符串存储 UTF-8 编码的文本](https://doc.rust-lang.org/book/ch08-02-strings.html#storing-utf-8-encoded-text-with-strings) 部分, 我们会更加详细地探讨 UTF-8 的处理问题.
 
-现在我们已经了解了需要了解的信息, 开始创建 `first_word` 函数来返回 slice. 标识字符串 slice 的类型被写作: `&str`:
+现在我们已经了解了需要了解的信息, 开始修改 `first_word` 函数来返回 slice. 标识字符串 slice 的类型被写作: `&str`:
 
 ```rust
 fn first_word(s: &String) -> &str {
@@ -885,6 +884,7 @@ fn main() {}
 ```rust
 fn second_word(s: &String) -> &str {
 ```
+REVIEW_MARK
 
 现在我们有了一个更简单不易混淆的 API, 因为编译器会确保 `String` 的引用始终保持合法. 再回顾代码示例 4-8 中的 bug, 当我们获取第一个单词结尾的索引后, 就把字符串清除了, 这导致我们的索引变成了无效. 那部分代码在逻辑上不正确, 但是不会直接抛出错误. 但当我们后续尝试使用空字符串的第一个索引时, 错误就会抛出来了. 不过现在我们知道了 slice, 使用 slice 就能避免这个错误, 并且帮助我们提前发现代码中的问题. 如果把 `first_word` 改成 slice 版本, 在编译阶段就会抛出错误:
 
