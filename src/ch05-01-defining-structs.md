@@ -1,6 +1,7 @@
 - [5.1 定义并实例化结构体](#51-定义并实例化结构体)
   - [使用字段初始化简写语法](#使用字段初始化简写语法)
   - [使用结构体更新语法基于其他实例创建新的实例](#使用结构体更新语法基于其他实例创建新的实例)
+  - [使用](#使用)
 ### 5.1 定义并实例化结构体
 
 结构体和元组类似, 在[类型: 元组](https://doc.rust-lang.org/book/ch03-02-data-types.html#the-tuple-type)这一章节对元组有详细的介绍, 两者的相同点在于都能够存储多种类型的关联值. 和元组一样, 结构体中的每一个元素都可以是不同的类型. 两者的不同之处在于, 在结构体中我们要对每一个元素进行命名, 以便清楚了解每一个元素的含义. 这个不同点也使得结构体比元组更加灵活: 我们不需要严格依赖顺序声明或者读取实例中的值.
@@ -125,3 +126,68 @@ fn main() {
 
 #### 使用结构体更新语法基于其他实例创建新的实例
 
+有一个很常见的场景是, 基于某个实例创建新的实例, 但只修改其中一部分字段. 此时我们可以使用 **结构体更新语法** (_struct update syntax_)达到我们的目的.
+
+看代码示例5-6, 不使用结构体更新语法, 我们想要基于 `user1` 创建 `user2`, 要这样实现. 我们为 `user2` 的字段 `email` 字段设置一个全新的值, 而其他字段则保持与代码示例5-2`user1` 中的一致.
+
+```rust
+struct User {
+    active: bool,
+    username: String,
+    email: String,
+    sign_in_count: u64,
+}
+
+fn main() {
+    // --snip--
+
+    let user1 = User {
+        email: String::from("someone@example.com"),
+        username: String::from("someusername123"),
+        active: true,
+        sign_in_count: 1,
+    };
+
+    let user2 = User {
+        active: user1.active,
+        username: user1.username,
+        email: String::from("another@example.com"),
+        sign_in_count: user1.sign_in_count,
+    };
+}
+```
+
+使用了结构体更新语法之后, 我们可以使用更少的代码达到同样的效果, 具体示例见5-7. `..`语法表示的意思是: 没有显式设置的字段值应该与`..`之后代表的实例中的剩余字段值一致. 代码示例5-7:
+
+```rust
+struct User {
+    active: bool,
+    username: String,
+    email: String,
+    sign_in_count: u64,
+}
+
+fn main() {
+    // --snip--
+
+    let user1 = User {
+        email: String::from("someone@example.com"),
+        username: String::from("someusername123"),
+        active: true,
+        sign_in_count: 1,
+    };
+
+    let user2 = User {
+        email: String::from("another@example.com"),
+        ..user1
+    };
+}
+```
+
+代码示例5-7中, 创建了一个与5-6中同样的 `user2`, 除了字段 `email` 值与 `user1` 不一致之外, 其他字段 `username`, `active`, `sign_in_count` 都是一样的. `..user1` 必须置于最后来表明剩余的值需要从 `user1` 的对应字段中获取, 同样地在这里我们也不需要理会字段在结构体中所定义的顺序.
+
+注意, 结构更新使用了与赋值一样的 `=` 符号, 这是因为它也转移了数据, 关于转移(move)数据, 在这一章: [变量与数据交互的方式: 移动](https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html#ways-variables-and-data-interact-move)中有详细介绍. 在以上示例中, `user2` 创建完成之后, 我们就不再能使用 `user1` 了, 因为 `user1` 中的 `username` 字段中的 `String` 值被移到了 `user2` 中. 如果我们给 `user2` 中的 `email` 和 `username` 字段附上新的 `String` 值, 只使用 `user1` 中的 `active` 和 `sign_in_count`, 那么在 `user2` 创建之后, `user1` 还会保持合法. 因为 `active` 和 `sign_in_count` 是实现了 `Copy` trait 的类型, 因此我们在[只存储在栈上的数据: 拷贝](https://doc.rust-lang.org/book/ch04-01-what-is-ownership.html#stack-only-data-copy)一章中讨论到的行为对这两个字段适用.
+
+
+#### 使用
+MARK: Using Tuple Structs without Named Fields to Create Different Types
