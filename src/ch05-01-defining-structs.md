@@ -1,3 +1,6 @@
+- [5.1 定义并实例化结构体](#51-定义并实例化结构体)
+  - [使用字段初始化简写语法](#使用字段初始化简写语法)
+  - [使用结构体更新语法基于其他实例创建新的实例](#使用结构体更新语法基于其他实例创建新的实例)
 ### 5.1 定义并实例化结构体
 
 结构体和元组类似, 在[类型: 元组](https://doc.rust-lang.org/book/ch03-02-data-types.html#the-tuple-type)这一章节对元组有详细的介绍, 两者的相同点在于都能够存储多种类型的关联值. 和元组一样, 结构体中的每一个元素都可以是不同的类型. 两者的不同之处在于, 在结构体中我们要对每一个元素进行命名, 以便清楚了解每一个元素的含义. 这个不同点也使得结构体比元组更加灵活: 我们不需要严格依赖顺序声明或者读取实例中的值.
@@ -85,4 +88,40 @@ fn main() {
     );
 }
 ```
+
+保持函数参数的命名与结构体中的字段一致是可以理解的, 但是必须重复 `email` 和 `username` 的字段名称和值不免有些繁琐. 如果结构体存在更多字段的话, 重复每一个名字就更麻烦了. 不过幸运的是, 我们有一个更方便的语法.
+
+#### 使用字段初始化简写语法
+
+在代码示例 5-4 中, 参数名称和结构体中的字段名称完全一致, 因此我们可以使用 **字段初始化简写语法**(_field init shorthand_)来重写 `build_user`, 以不重复 `email` 和 `username` 的方式达到同样的目的, 正如在代码示例5-5中列出的一样:
+
+```rust
+struct User {
+    active: bool,
+    username: String,
+    email: String,
+    sign_in_count: u64,
+}
+
+fn build_user(email: String, username: String) -> User {
+    User {
+        email,
+        username,
+        active: true,
+        sign_in_count: 1,
+    }
+}
+
+fn main() {
+    let user1 = build_user(
+        String::from("someone@example.com"),
+        String::from("someusername123"),
+    );
+}
+```
+
+在以上代码示例中, 我们创建了一个基于结构体 `User` 的实例, 结构体中其中一个字段是 `email`. 在 `build_user` 函数中, 我们想要将传入函数中的参数 `email` 的值设置为字段 `email` 的值. 因为两者名称一致, 所以只需要 `email` 即可, 不需要重复声明 `email: email`.
+
+
+#### 使用结构体更新语法基于其他实例创建新的实例
 
