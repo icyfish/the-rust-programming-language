@@ -884,9 +884,8 @@ fn main() {}
 ```rust
 fn second_word(s: &String) -> &str {
 ```
-REVIEW_MARK
 
-现在我们有了一个更简单不易混淆的 API, 因为编译器会确保 `String` 的引用始终保持合法. 再回顾代码示例 4-8 中的 bug, 当我们获取第一个单词结尾的索引后, 就把字符串清除了, 这导致我们的索引变成了无效. 那部分代码在逻辑上不正确, 但是不会直接抛出错误. 但当我们后续尝试使用空字符串的第一个索引时, 错误就会抛出来了. 不过现在我们知道了 slice, 使用 slice 就能避免这个错误, 并且帮助我们提前发现代码中的问题. 如果把 `first_word` 改成 slice 版本, 在编译阶段就会抛出错误:
+现在我们有了一个更简单不易混淆的 API, 因为编译器会确保 `String` 的引用始终保持合法. 再回顾代码示例 4-8 中的 bug, 当我们获取第一个单词结尾的索引后, 就把字符串清除了, 这导致我们的索引变成了无效. 那部分代码在逻辑上不正确, 但是不会直接抛出错误. 当我们后续尝试使用空字符串的第一个索引时, 错误就会抛出来了. 不过现在我们知道了 slice, 使用 slice 就能避免这个错误, 并且帮助我们提前发现代码中的问题. 如果把 `first_word` 改成 slice 版本, 在编译阶段就会抛出错误:
 
 ```rust
 fn first_word(s: &String) -> &str {
@@ -933,11 +932,11 @@ For more information about this error, try `rustc --explain E0502`.
 error: could not compile `ownership` due to previous error
 ```
 
-回想一下借用的规则, 如果我们对于某个值有一个不可变引用, 就不能再获取一个可变引用了. 因为调用 `clear` 方法之后, 我们需要清空 `String`, 要实现这一步必须要获取可变引用. 在调用完 `clear` 方法之后, `println!` 需要使用 `word` 的引用, 因此此时不可变引用必须保持可用的状态. Rust 不允许 `clear` 中的可变引用和 `word` 中的不可变引用同时存在, 因此编译会失败. Rust 不仅使得我们的 API 更容易使用, 还能够帮助我们在编译阶段消除一整类的错误!
+回想一下借用的规则, 如果我们对于某个值有一个不可变引用, 就不能再获取一个可变引用了. 因为调用 `clear` 方法之后, 就会清空 `String`, 要实现这一步必须要获取可变引用. 在调用完 `clear` 方法之后, `println!` 需要使用 `word` 的引用, 因此此时不可变引用必须保持可用的状态. Rust 不允许 `clear` 中的可变引用和 `word` 中的不可变引用同时存在, 因此编译会失败. Rust 不仅使得我们的 API 更容易使用, 还能够帮助我们在编译阶段消除一整类的错误!
 
 #### 字符串字面量是 slice
 
-还记得我们之前提到字符串字面量被存储在二进制文件中. 现在我们已经了解了 slice, 那么就能够更恰当地理解字符串字面量:
+还记得我们之前提到字符串字面量被存储在二进制文件中. 现在我们已经了解了 slice, 那么就能够更好地理解字符串字面量:
 
 ```rust
 #![allow(unused)]
@@ -982,7 +981,7 @@ fn main() {
 
     let my_string_literal = "hello world";
 
-    // `first_word` 同样接受 String 字面量, 不管是全部还是部分
+    // `first_word` 同样接受 String 字面量的 slice, 不管是全部还是部分
     let word = first_word(&my_string_literal[0..6]);
     let word = first_word(&my_string_literal[..]);
 
@@ -993,7 +992,7 @@ fn main() {
 }
 ```
 
-如果现在有一个字符串 slice, 我们可以直接传入. 如果有一个 `String`, 可以传递这个 `String` 的 slice, 或者这个 `String` 的引用. 这种灵活性利用了 _deref coercions_ 的优势, 我们会在第15章的[函数和方法隐式 Deref 强制转换](https://doc.rust-lang.org/book/ch15-02-deref.html#implicit-deref-coercions-with-functions-and-methods)部分中对这个特性进行介绍. 定义一个函数, 接受字符串 slice 而不是 `String` 的引用使得我们的 API 更加通用且不会有任何功能的缺失:
+如果现在有一个字符串 slice, 我们可以直接将其作为参数传入. 如果有一个 `String`, 可以传递这个 `String` 的 slice, 或者这个 `String` 的引用. 这种灵活性利用了 _deref coercions_ 的优势, 我们会在第15章的[函数和方法隐式 Deref 强制转换](https://doc.rust-lang.org/book/ch15-02-deref.html#implicit-deref-coercions-with-functions-and-methods)部分中对这个特性进行介绍. 定义一个函数, 接受字符串 slice 而不是 `String` 的引用使得我们的 API 更加通用且不会有任何功能的缺失:
 
 ```rust
 fn first_word(s: &str) -> &str {
@@ -1011,28 +1010,26 @@ fn first_word(s: &str) -> &str {
 fn main() {
     let my_string = String::from("hello world");
 
-    // `first_word` works on slices of `String`s, whether partial or whole
+    // `first_word` 接受字符串 slice, 不管是全部还是部分
     let word = first_word(&my_string[0..6]);
     let word = first_word(&my_string[..]);
-    // `first_word` also works on references to `String`s, which are equivalent
-    // to whole slices of `String`s
+    // `first_word` 同样接受 String 的引用, 和字符串的整个 slice 无异 
     let word = first_word(&my_string);
 
     let my_string_literal = "hello world";
 
-    // `first_word` works on slices of string literals, whether partial or whole
+    // `first_word` 同样接受 String 字面量的 slice, 不管是全部还是部分
     let word = first_word(&my_string_literal[0..6]);
     let word = first_word(&my_string_literal[..]);
 
-    // Because string literals *are* string slices already,
-    // this works too, without the slice syntax!
+    // 因为字符串字面量本身就是字符串 slice, 所以以下语法依然生效
     let word = first_word(my_string_literal);
 }
 ```
 
 ### 其他类型的 Slice
 
-字符串 slice 只针对字符串, 当然我们还有更通用的 slice 类型. 查看以下数组:
+截止目前, 我们讲到的 slice 只针对字符串. 当然有些其他类型的数据也有 slice. 查看以下数组:
 
 ```rust
 #![allow(unused)]
@@ -1041,7 +1038,7 @@ let a = [1, 2, 3, 4, 5];
 }
 ```
 
-正如想要引用字符串的一部分一样, 我们也会想要引用数组的一部分. 可以这样实现:
+正如想要引用字符串的一部分一样, 我们也会想要引用数组的一部分. 可以这样操作:
 
 ```rust
 #![allow(unused)]
@@ -1054,10 +1051,10 @@ assert_eq!(slice, &[2, 3]);
 }
 ```
 
-这个 slice 的类型是 `&[i32]`. 和字符串 slice 的工作机制一致, 都是通过存储第一个元素的引用和集合的长度实现的. 对于任何其他类型的集合, 你都可以使用这类 slice. 在第 8 章谈到向量的时候, 我们会讨论更多关于这些集合的细节.
+这个 slice 的类型是 `&[i32]`. 和字符串 slice 的工作机制一样, 都是通过存储第一个元素的引用和集合的长度实现的. 对于任何其他类型的集合, 你都可以使用这类 slice. 在第 8 章谈到向量(vector)的时候, 我们会讨论更多关于这些集合的细节.
 
 ### 总结
 
-所有权, 借用, slice 的概念确保了 Rust 程序在编译阶段的内存安全. 和其他系统编程语言无异, Rust 也给了我们内存使用的控制权, 但在 Rust 中, 当数据的所有者跳出作用域之后, 数据就会被清空, 这表明我们不再需要额外自己实现控制相关的代码.
+所有权, 借用, slice 的概念确保了 Rust 程序在编译阶段的内存安全. 和其他系统编程语言一样, Rust 也给了开发者管理内存的控制权. 在 Rust 中还有一点好处就是, 当数据的所有者跳出作用域之后, 数据就会被清空, 这表明我们不再需要额外自己实现和调试控制相关的代码.
 
-所有权的概念对 Rust 很多其他部分的工作机制也有所影响, 因此在本书的剩余部分, 我们也会讨论到更多相关的概念. 现在我们开始第五章的学习: 如何将多份数据组合近一个 `struct` 中.
+所有权的概念对 Rust 很多其他部分的工作机制也有所影响, 因此在本书的剩余部分, 我们也会讨论到更多相关的概念. 现在我们开始第五章的学习: 如何将多份数据组合进一个 `struct` 中.
