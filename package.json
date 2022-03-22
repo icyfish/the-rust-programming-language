@@ -1,0 +1,14 @@
+{
+  "name": "trpl",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "Fish <icyyfish@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "vuepress": "^2.0.0-beta.36"
+  },
+  "scripts": {
+    "start": "vuepress dev docs",
+    "build": "vuepress build docs"
+  }
+}
