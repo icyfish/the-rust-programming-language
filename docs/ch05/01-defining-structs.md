@@ -219,9 +219,67 @@ fn main() {
 
 为了定义 `AlwaysEqual`, 我们使用 `struct` 关键词, 紧接着是我们想要的名称, 其后是一个分号. 此时不需要大括号或者小括号. 然后我们用类似的方式在 `subject` 变量中获取 `AlwaysEqual` 的实例: 仍然使用我们定义的名称, 不使用任何大括号或者小括号. 假设之后我们要为这个类型实现一种行为, 使得每一个 `AlwaysEqual` 的实例都与其它任何类型的实例一致, 这样做的其中一个目的可能是为了在每次测试时都能得到一个已知的结果. 在这种场景下, 我们就不需要任何实际的数据. 在第十章会看到如何定义 trait 以及如何在各个类型中实现它们, 包括类单元结构体类型. 
 
+::: tip 结构体数据的所有权
+在代码示例5-1的 `User` 结构体定义中, 我们使用了本身拥有所有权的 `String` 类型, 而不是 `&str` 字符串 slice 类型. 我们是刻意这样做的, 目的是希望每一个结构体拥有自己的数据, 并且希望只要整个结构体有效, 它的数据也是有效的.
 
-> **结构体数据的所有权**
-> 
-> 
-> 
-> 
+结构体还可以存储其他对象所拥有的数据的引用, 但要达成这一目的需要借助**生命周期**(_lifetimes_), 我们会在第十章中介绍这个特性.
+
+生命周期的特性确保了只要结构体有效, 结构体所引用的数据就是有效的. 假设我们想在结构体存储一个引用, 但没有指定生命周期, 那么它也是无效的. 比如:
+
+```rust
+struct User {
+    active: bool,
+    username: &str,
+    email: &str,
+    sign_in_count: u64,
+}
+
+fn main() {
+    let user1 = User {
+        email: "someone@example.com",
+        username: "someusername123",
+        active: true,
+        sign_in_count: 1,
+    };
+}
+```
+
+编译器会抛出错误: 需要生命周期说明符,
+
+```
+$ cargo run
+   Compiling structs v0.1.0 (file:///projects/structs)
+error[E0106]: missing lifetime specifier
+ --> src/main.rs:3:15
+  |
+3 |     username: &str,
+  |               ^ expected named lifetime parameter
+  |
+help: consider introducing a named lifetime parameter
+  |
+1 ~ struct User<'a> {
+2 |     active: bool,
+3 ~     username: &'a str,
+  |
+
+error[E0106]: missing lifetime specifier
+ --> src/main.rs:4:12
+  |
+4 |     email: &str,
+  |            ^ expected named lifetime parameter
+  |
+help: consider introducing a named lifetime parameter
+  |
+1 ~ struct User<'a> {
+2 |     active: bool,
+3 |     username: &str,
+4 ~     email: &'a str,
+  |
+
+For more information about this error, try `rustc --explain E0106`.
+error: could not compile `structs` due to 2 previous errors
+```
+
+在第十章中, 我们会讨论如何修复这些错误以便在结构体中存储引用. 目前我们暂时使用自身拥有所有权的类型, 比如 `String` 来代替 `&str` 之类的引用.
+:::
+
