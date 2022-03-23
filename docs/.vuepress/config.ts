@@ -30,7 +30,7 @@ export default defineUserConfig<DefaultThemeOptions>({
         ]
       },
       {
-        text: "5. 使用 Structs 来组织相关联的数据",
+        text: "5. 使用结构体来组织相关联的数据",
         link: "/ch05/00-structs.md",
         children: [
           {
