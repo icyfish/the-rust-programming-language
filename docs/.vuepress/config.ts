@@ -2,6 +2,7 @@ import { defineUserConfig } from "vuepress";
 import type { DefaultThemeOptions } from "vuepress";
 
 export default defineUserConfig<DefaultThemeOptions>({
+  base: "/The-Rust-Programming-Language/",
   lang: "en-US",
   title: "Rust 程序设计语言",
   description: "Translation of The Rust Programming Language",
