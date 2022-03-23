@@ -6,11 +6,16 @@ export default defineUserConfig<DefaultThemeOptions>({
   lang: "en-US",
   title: "Rust 程序设计语言",
   description: "Translation of The Rust Programming Language",
-
   // theme and its config
   theme: "@vuepress/theme-default",
   themeConfig: {
     // logo: "https://vuejs.org/images/logo.png",
+    navbar: [
+      {
+        text: "GitHub",
+        link: "https://github.com/icyfish/The-Rust-Programming-Language"
+      }
+    ],
     sidebar: [
       {
         text: "4. 理解所有权",
@@ -41,5 +46,17 @@ export default defineUserConfig<DefaultThemeOptions>({
         ]
       }
     ]
-  }
+  },
+  plugins: [
+    [
+      '@vuepress/plugin-search',
+      {
+        locales: {
+          '/': {
+            placeholder: '搜索',
+          }
+        },
+      },
+    ],
+  ],
 });
