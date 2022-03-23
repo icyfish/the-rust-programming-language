@@ -18,6 +18,16 @@ export default defineUserConfig<DefaultThemeOptions>({
     ],
     sidebar: [
       {
+        text: "1. 入门",
+        link: "/ch01/00-getting-started.md",
+        children: [
+          {
+            text: "1.1 安装",
+            link: "/ch01/01-installation.md"
+          },
+        ]
+      },
+      {
         text: "4. 理解所有权",
         link: "/ch04/00-understanding-ownership.md",
         children: [
@@ -42,6 +52,10 @@ export default defineUserConfig<DefaultThemeOptions>({
           {
             text: "5.1 定义并实例化结构体",
             link: "/ch05/01-defining-structs.md"
+          },
+          {
+            text: "5.2 使用结构体的示例程序",
+            link: "/ch05/02-example-structs.md"
           }
         ]
       }
