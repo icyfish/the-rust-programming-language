@@ -56,6 +56,10 @@ export default defineUserConfig<DefaultThemeOptions>({
           {
             text: "5.2 使用结构体的示例程序",
             link: "/ch05/02-example-structs.md"
+          },
+          {
+            text: "5.3 方法语法",
+            link: "/ch05/03-method-syntax.md"
           }
         ]
       }
