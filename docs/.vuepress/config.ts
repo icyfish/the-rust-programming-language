@@ -2,7 +2,7 @@ import { defineUserConfig } from "vuepress";
 import type { DefaultThemeOptions } from "vuepress";
 
 export default defineUserConfig<DefaultThemeOptions>({
-  base: "/The-Rust-Programming-Language/",
+  base: "/the-rust-programming-language/",
   lang: "en-US",
   title: "Rust 程序设计语言",
   description: "Translation of The Rust Programming Language",
@@ -13,7 +13,7 @@ export default defineUserConfig<DefaultThemeOptions>({
     navbar: [
       {
         text: "GitHub",
-        link: "https://github.com/icyfish/The-Rust-Programming-Language"
+        link: "https://github.com/icyfish/the-rust-programming-language"
       }
     ],
     sidebar: [
