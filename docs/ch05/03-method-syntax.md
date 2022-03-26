@@ -73,6 +73,110 @@ fn main() {
 
 当我们在结构体中定义与字段同名的方法, 通常(但并不是所有时候)会是希望该方法只返回字段中的值, 而不做任何其他事情. 这样的方法被称为 _getters_, Rust 不像一些其他语言一样内置 getters, 我们必须手动实现. Getters 很有用, 我们可以将某个字段设置为私有, 同名方法为公开方法, 通过这样的方式设置字段的只读属性, 提供一个公开的 API 来读取该字段. 我们会在第七章对私有和公有的概念, 以及如何指定字段或方法为公有或者私有进行详细的介绍.
 
-::: tip Where’s the -> Operator?
+::: tip -> 运算符在哪里?
+在 C 和 C++ 程序语言中, 调用方法有两种方式: 如果是直接调用对象上的方法, 可以直接用 `.` 运算符, 调用关联到对象的指针上的方法, 则是用 `->`, 并且此时还需要先对指针进行解引用(dereference). 换句话说, 如果 `object` 是一个指针, 那么 `object->something` 就类似 `(*object).something`.
 
+Rust 中并没有与 `->` 运算符同样功能的运算符, 不过, Rust 中有个特性: **自动引用和解引用**(_automatic referencing and dereferencing_). 当我们调用结构体中的方法的时候, 就会发生自动引用和解引用的行为.
+
+它内部是这样工作的: 当我们这样调用方法时: `object.something()`, Rust 会为 `object` 自动添加 `&`, `&mut`, 或者 `*`, 使得 `object` 能够匹配方法的签名. 也就是说, 以下两部分代码是一致的:
+
+```shell
+#![allow(unused)]
+fn main() {
+#[derive(Debug,Copy,Clone)]
+struct Point {
+    x: f64,
+    y: f64,
+}
+
+impl Point {
+   fn distance(&self, other: &Point) -> f64 {
+       let x_squared = f64::powi(other.x - self.x, 2);
+       let y_squared = f64::powi(other.y - self.y, 2);
+
+       f64::sqrt(x_squared + y_squared)
+   }
+}
+let p1 = Point { x: 0.0, y: 0.0 };
+let p2 = Point { x: 5.0, y: 6.5 };
+p1.distance(&p2);
+(&p1).distance(&p2);
+}
+```
+
+第一行的代码 `p1.distance(&p2);` 看起来更简洁一些. 自动引用的行为之所以有效的原因是方法有一个明确的接收者 -- `self` 的类型. 只要知道了接收者和方法的名称, Rust 就能够区分出方法是在进行读取(`&self`), 修改(`&mut self`)还是获取所有权(`self`)的操作. Rust 对方法接收者的隐式借用使得所有权的功能在实践中更加好用.
 :::
+
+### 当方法接受多个参数
+
+现在我们开始实现 `Rectangle` 结构体的第二个方法. 这一次, 我们要实现这样的操作: 让 `Rectangle` 的一个实例接收它的另一个实例, 如果如果第二个长方形能够完全被套入第一个长方形中的话, 就返回 `true`, 否则返回 `false`. 也就是说, 一旦我们定义了 `can_hold` 方法, 就能够编写以下示例 5-14 中的代码:
+
+```rust
+fn main() {
+    let rect1 = Rectangle {
+        width: 30,
+        height: 50,
+    };
+    let rect2 = Rectangle {
+        width: 10,
+        height: 40,
+    };
+    let rect3 = Rectangle {
+        width: 60,
+        height: 45,
+    };
+
+    println!("Can rect1 hold rect2? {}", rect1.can_hold(&rect2));
+    println!("Can rect1 hold rect3? {}", rect1.can_hold(&rect3));
+}
+```
+
+预期的输出结果大概会是下面这样, 因为 `rect2` 的宽高都比 `rect1` 小, 而 `rect3` 的宽度大于 `rect1` 的宽度:
+
+```shell
+Can rect1 hold rect2? true
+Can rect1 hold rect3? false
+```
+
+因为我们想要定义一个方法, 所以应该在 `impl Rectangle` 块中定义. 方法名为 `can_hold`, 并且该方法接收另一个 `Rectangle` 的不可变借用作为参数. 通过查看调用该方法的代码, 我们可以区分出参数的类型: `rect1.can_hold(&rect2)` 传入的参数是 `&rect2`, 它是 `Rectangle` 其中一个实例 `rect2` 的不可变借用. 此时使用不可变借用比较合理, 因为我们只需要读取 `rect2`(并不需要写入, 如果是写入的话, 就应该使用可变借用), 同时我们希望 `main` 函数持续拥有 `rect2` 的所有权, 以便在调用 `can_hold` 方法之后依然能够使用它. `can_hold` 方法的返回值类型是布尔值, 其内部实现的功能是: 检查 `self` 的宽高值是否大于 `Rectangle` 另一个实例的对应宽度和高度值. 现在我们在代码5-13中的 `impl` 块中添加 `can_hold` 方法的实现, 具体代码示例为下面的 5-15:
+
+```rust
+#[derive(Debug)]
+struct Rectangle {
+    width: u32,
+    height: u32,
+}
+
+impl Rectangle {
+    fn area(&self) -> u32 {
+        self.width * self.height
+    }
+
+    fn can_hold(&self, other: &Rectangle) -> bool {
+        self.width > other.width && self.height > other.height
+    }
+}
+
+fn main() {
+    let rect1 = Rectangle {
+        width: 30,
+        height: 50,
+    };
+    let rect2 = Rectangle {
+        width: 10,
+        height: 40,
+    };
+    let rect3 = Rectangle {
+        width: 60,
+        height: 45,
+    };
+
+    println!("Can rect1 hold rect2? {}", rect1.can_hold(&rect2));
+    println!("Can rect1 hold rect3? {}", rect1.can_hold(&rect3));
+}
+```
+
+实现了 `can_hold` 方法之后, 当我们执行5-14中的代码, 就能够得到预期的结果. 方法能够接受多个参数, 这些参数都紧接在 `self` 参数之后, 这些参数与普通的函数参数的功能并没有区别.
+
+
+### 关联函数
