@@ -1,5 +1,7 @@
 [[toc]]
 
+- [Original Post: Method Syntax](https://doc.rust-lang.org/stable/book/ch05-03-method-syntax.html)
+
 ## 方法语法
 
 **方法**(_method_) 跟函数很像: 使用 `fn` 关键词和一个名称来声明, 同样接受参数和返回值, 并且当方法被调用时, 方法内部的代码会被执行. 不过和函数不同的是: 方法在结构体(或枚举, 或 trait 对象)的上下文中被定义. 关于枚举和 trait 对象, 我们分别会在第6章和第17章中进行详细的介绍. 通常情况下, 方法的第一个参数始终是 `self`, `self` 表示调用该方法的结构体实例.
@@ -180,3 +182,81 @@ fn main() {
 
 
 ### 关联函数
+
+如果函数被定义在 `impl` 块中, 则该函数就是 _关联函数_. 之所以被称为关联函数, 是因为这些函数与 `impl` 之后的类型声明相关联. 我们可以定义一个关联函数, 但不以 `self` 作为第一个参数, 因此该关联函数也不是方法, 因为他们不需要与结构体的实例共同作用. 之前我们已经使用过 `String::from` 这类函数, 其中 `from` 方法定义在 `String` 类型上.
+
+关联函数并非方法, 因此常被作为返回一个结构体实例的构造器. 举个例子, 我们可以定义一个关联函数, 接受一个参数, 这个参数能同时作为长方形的宽和高, 这样能更容易地创建正方形, 而不需要声明同一个值两次:
+
+```rust
+#[derive(Debug)]
+struct Rectangle {
+    width: u32,
+    height: u32,
+}
+
+impl Rectangle {
+    fn square(size: u32) -> Rectangle {
+        Rectangle {
+            width: size,
+            height: size,
+        }
+    }
+}
+
+fn main() {
+    let sq = Rectangle::square(3);
+}
+```
+
+如果要调用关联函数, 我们可以使用 `::` 语法, 其后跟上结构体的名称; 比如: `let sq = Rectangle::square(3);`. 这个方法在结构体的命名空间中: `::` 语法能同时作用于关联函数和模块所创建的命名空间中. 我们会在第七章中讨论模块的概念.
+
+### 多个 `impl` 块
+
+每个结构体都允许存在多个 `impl` 块. 比如, 代码示例 5-15 与 5-16 是一致的, 只是在 5-16 中, 方法都声明在 `impl` 块中:
+
+(5-16: 使用 `impl` 块重写 5-15 的代码)
+```rust
+#[derive(Debug)]
+struct Rectangle {
+    width: u32,
+    height: u32,
+}
+
+impl Rectangle {
+    fn area(&self) -> u32 {
+        self.width * self.height
+    }
+}
+
+impl Rectangle {
+    fn can_hold(&self, other: &Rectangle) -> bool {
+        self.width > other.width && self.height > other.height
+    }
+}
+
+fn main() {
+    let rect1 = Rectangle {
+        width: 30,
+        height: 50,
+    };
+    let rect2 = Rectangle {
+        width: 10,
+        height: 40,
+    };
+    let rect3 = Rectangle {
+        width: 60,
+        height: 45,
+    };
+
+    println!("Can rect1 hold rect2? {}", rect1.can_hold(&rect2));
+    println!("Can rect1 hold rect3? {}", rect1.can_hold(&rect3));
+}
+```
+
+在这里我们没有必要将两个方法分别用 `impl` 块包裹, 以上示例只是想表明这是个合法的语法. 在第 10 章中我们会介绍泛型和 trait 的概念, 也会看到多个 `impl` 块的实际使用场景.
+
+### 总结
+
+运用结构体, 我们可以创建自定义的类型, 保持相关的数据互相关联, 使得代码更加清晰. 在 `impl` 块中, 可以定义与类型相关的函数, 同时, 方法也是关联函数的其中一种类型, 使得我们能够声明结构体实例的行为.
+
+不过结构体并不是创建自定义类型的唯一方式: Rust 的枚举功能也能帮助我们达到相同的目的.
