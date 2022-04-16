@@ -62,6 +62,16 @@ export default defineUserConfig<DefaultThemeOptions>({
             link: "/ch05/03-method-syntax.md"
           }
         ]
+      },
+      {
+        text: "6. 枚举和模式匹配",
+        link: "/ch06/00-enums",
+        children: [
+          // {
+          //   text: "6.1",
+          //   link: "/ch06/01-"
+          // }
+        ]
       }
     ]
   },
