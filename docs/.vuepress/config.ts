@@ -67,10 +67,10 @@ export default defineUserConfig<DefaultThemeOptions>({
         text: "6. 枚举和模式匹配",
         link: "/ch06/00-enums",
         children: [
-          // {
-          //   text: "6.1",
-          //   link: "/ch06/01-"
-          // }
+          {
+            text: "6.1 定义枚举",
+            link: "/ch06/01-defining-an-enum"
+          }
         ]
       }
     ]
