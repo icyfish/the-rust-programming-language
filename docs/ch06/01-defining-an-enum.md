@@ -1,6 +1,7 @@
+[Original](https://doc.rust-lang.org/stable/book/ch06-01-defining-an-enum.html)
+
 [[toc]]
 
-[Original](https://doc.rust-lang.org/stable/book/ch06-01-defining-an-enum.html)
 ## 6.1 定义枚举
 
 之前我们学习过使用结构体来自定义数据类型, 枚举则是另外一种自定义的方式. 我们先从一个实际场景开始, 用代码对场景进行呈现, 从而了解枚举类型存在的必要性, 以及为什么在这种场景下使用枚举类型比使用结构体更加合适. 假设现在我们需要处理 IP 地址. 目前 IP 地址的定义有两套标准: 版本4(IPv4)和版本6(IPv6). 所以在我们的程序中处理 IP 地址时也只有这两种情况, 我们可以枚举出所有可能的变体, **枚举**也因此得名.

@@ -70,6 +70,10 @@ export default defineUserConfig<DefaultThemeOptions>({
           {
             text: "6.1 定义枚举",
             link: "/ch06/01-defining-an-enum"
+          },
+          {
+            text: "6.2 match 控制流结构体",
+            link: "/ch06/02-match"
           }
         ]
       }
