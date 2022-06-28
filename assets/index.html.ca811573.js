@@ -1,0 +1,1 @@
+const t={key:"v-8daa1a0e",path:"/",title:"Rust \u7A0B\u5E8F\u8BBE\u8BA1\u8BED\u8A00(\u4E2D\u6587\u7248)",lang:"en-US",frontmatter:{},excerpt:"",headers:[],git:{updatedTime:1648164533e3,contributors:[{name:"Fish",email:"icyyfish@gmail.com",commits:3}]},filePathRelative:"README.md"};export{t as data};
